@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Transaction History - InvestNest</title>
+    
+    <style>
+    table {
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    th, td {
+        border: 1px solid black;
+        padding: 8px;
+        text-align: left;
+    }
+
+    th {
+        font-weight: bold;
+    }
+    </style>
+</head>
+<body>
+
+    <h1>Transaction History</h1>
+
+    {% if transactions %}
+        <table border="1">
+            <tr>
+                <th>Transaction ID</th>
+                <th>Ticket</th>
+                <th>Company Name</th>
+                <th>Type</th>
+                <th>Quantity</th>
+                <th>Price Per Share</th>
+                <th>Date</th>
+            </tr>
+
+            {% for transaction in transactions %}
+            <tr>
+                <td>{{ transaction.txn_id }}</td>
+                <td>{{ transaction.ticker }}</td>
+                <td>{{ transaction.company_name }}</td>
+                <td>{{ transaction.txn_type }}</td>
+                <td>{{ transaction.quantity }}</td>
+                <td>{{ transaction.price_per_share }}</td>
+                <td>{{ transaction.txn_date }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+
+    {% else %}
+        <p>No transactions found.</p>
+    {% endif %}
+
+    <br>
+    <a href="/logout">Logout</a>
+
+</body>
+</html>

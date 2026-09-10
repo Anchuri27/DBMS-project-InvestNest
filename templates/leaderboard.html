@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Leaderboard - InvestNest</title>
+
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Leaderboard</h1>
+
+    {% if leaderboard %}
+        <table>
+            <tr>
+                <th>Rank</th>
+                <th>Username</th>
+                <th>Cash Balance</th>
+                <th>Stock Value</th>
+                <th>Total Portfolio Value</th>
+            </tr>
+
+            {% for user in leaderboard %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ user.username }}</td>
+                <td>{{ user.cash_balance }}</td>
+                <td>{{ user.stock_value }}</td>
+                <td>{{ user.total_value }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+
+    {% else %}
+        <p>No users found.</p>
+    {% endif %}
+
+    <br>
+
+    <a href="/history">Transaction History</a>
+    <br><br>
+
+    <a href="/logout">Logout</a>
+
+</body>
+</html>
