@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>InvestNest Dashboard</title>
+</head>
+
+<body>
+
+    <h1>InvestNest Dashboard</h1>
+
+    <h2>Welcome, {{ user.username }}!</h2>
+
+    <h3>Cash Balance: ₹{{ user.cash_balance }}</h3>
+
+    <hr>
+
+    <h2>Available Stocks</h2>
+    <form method="GET" action="/dashboard">
+    <input type="hidden" name="user_id" value="{{ user.user_id }}">
+
+    <input type="text"
+           name="search"
+           placeholder="Search by ticker or company name"
+           value="{{ request.args.get('search', '') }}">
+
+    <button type="submit">Search</button>
+</form>
+
+<form method="GET" action="/dashboard">
+    <input type="hidden" name="user_id" value="{{ user.user_id }}">
+
+    <input type="hidden"
+           name="search"
+           value="{{ request.args.get('search', '') }}">
+
+    <select name="price_filter">
+        <option value="">All Stocks</option>
+        <option value="below_1000"
+            {% if request.args.get('price_filter') == 'below_1000' %}selected{% endif %}>
+            Below ₹1000
+        </option>
+        <option value="1000_3000"
+            {% if request.args.get('price_filter') == '1000_3000' %}selected{% endif %}>
+            ₹1000 - ₹3000
+        </option>
+        <option value="above_3000"
+            {% if request.args.get('price_filter') == 'above_3000' %}selected{% endif %}>
+            Above ₹3000
+        </option>
+    </select>
+
+    <button type="submit">Filter</button>
+</form>
+
+<br>
+
+    {% if stocks %}
+
+        {% for stock in stocks %}
+
+            <div>
+                <strong>{{ stock.ticker }}</strong>
+                - {{ stock.company_name }}
+                - ₹{{ stock.current_price }}
+
+                <br><br>
+
+                <form action="/buy" method="POST">
+                    <input type="hidden" name="user_id" value="{{ user.user_id }}">
+                    <input type="hidden" name="stock_id" value="{{ stock.stock_id }}">
+
+                    <input type="number" name="quantity"
+                           placeholder="Quantity"
+                           min="1"
+                           required>
+
+                    <button type="submit">Buy</button>
+                </form>
+
+                <br>
+
+                <form action="/sell" method="POST">
+                    <input type="hidden" name="user_id" value="{{ user.user_id }}">
+                    <input type="hidden" name="stock_id" value="{{ stock.stock_id }}">
+
+                    <input type="number" name="quantity"
+                           placeholder="Quantity"
+                           min="1"
+                           required>
+
+                    <button type="submit">Sell</button>
+                </form>
+
+                {% if user.is_admin %}
+    <br>
+
+    <form action="/admin/update-price" method="POST">
+        <input type="hidden" name="user_id" value="{{ user.user_id }}">
+        <input type="hidden" name="stock_id" value="{{ stock.stock_id }}">
+
+        <input type="number"
+               name="new_price"
+               placeholder="New Price"
+               step="0.01"
+               min="0.01"
+               required>
+
+        <button type="submit">Update Price</button>
+    </form>
+{% endif %}
+
+            </div>
+
+            <hr>
+
+        {% endfor %}
+
+    {% else %}
+
+        <p>No stocks found.</p>
+
+    {% endif %}
+
+</body>
+</html>
