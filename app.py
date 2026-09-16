@@ -1,4 +1,5 @@
-from flask import Flask, request
+from flask import Flask, request, render_template, redirect, flash, session
+from functools import wraps
 import mysql.connector
 import os
 from dotenv import load_dotenv
@@ -6,6 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
+app.secret_key = os.getenv("SECRET_KEY", "dev-secret-key")
 
 
 # Database connection
@@ -18,6 +20,119 @@ def get_db_connection():
         port=int(os.getenv("DB_PORT", 3306))
     )
 
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if "user_id" not in session:
+            flash("Please login first.")
+            return redirect("/login")
+        return f(*args, **kwargs)
+
+    return decorated_function
+
+# Transaction History
+@app.route("/history")
+@login_required
+def history():
+
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+
+    try:
+        cursor.execute(
+            """
+            SELECT
+                t.txn_id,
+                s.ticker,
+                s.company_name,
+                t.txn_type,
+                t.quantity,
+                t.price_per_share,
+                t.txn_date
+            FROM transactions t
+            JOIN stocks s
+                ON t.stock_id = s.stock_id
+            WHERE t.user_id = %s
+            ORDER BY t.txn_id DESC
+            """,
+            (session["user_id"],)
+        )
+
+        transactions = cursor.fetchall()
+
+        return render_template(
+            "history.html",
+            transactions=transactions
+        )
+
+    except Exception as e:
+        return f"Failed to load transaction history: {e}"
+
+    finally:
+        cursor.close()
+        db.close()
+
+# Leaderboard
+@app.route("/leaderboard")
+@login_required
+def leaderboard():
+
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+
+    try:
+        cursor.execute(
+            """
+            SELECT
+                u.user_id,
+                u.username,
+                u.cash_balance,
+                COALESCE(
+                    SUM(
+                        CASE
+                            WHEN t.txn_type = 'BUY' THEN t.quantity
+                            WHEN t.txn_type = 'SELL' THEN -t.quantity
+                            ELSE 0
+                        END * s.current_price
+                    ),
+                    0
+                ) AS stock_value
+            FROM users u
+            LEFT JOIN transactions t
+                ON u.user_id = t.user_id
+            LEFT JOIN stocks s
+                ON t.stock_id = s.stock_id
+            GROUP BY u.user_id, u.username, u.cash_balance
+            ORDER BY
+                (u.cash_balance + COALESCE(
+                    SUM(
+                        CASE
+                            WHEN t.txn_type = 'BUY' THEN t.quantity
+                            WHEN t.txn_type = 'SELL' THEN -t.quantity
+                            ELSE 0
+                        END * s.current_price
+                    ),
+                    0
+                )) DESC
+            """
+        )
+
+        leaderboard_data = cursor.fetchall()
+
+        for user in leaderboard_data:
+            user["total_value"] = user["cash_balance"] + user["stock_value"]
+
+        return render_template(
+            "leaderboard.html",
+            leaderboard=leaderboard_data
+        )
+
+    except Exception as e:
+        return f"Failed to load leaderboard: {e}"
+
+    finally:
+        cursor.close()
+        db.close()
 
 # Home
 @app.route("/")
@@ -193,6 +308,123 @@ def sell():
         cursor.close()
         db.close()
 
+# Registration
+@app.route("/register", methods=["GET", "POST"])
+def register():
+
+    if request.method == "GET":
+        return render_template("register.html")
+
+    username = request.form.get("username", "").strip()
+    password = request.form.get("password", "")
+
+    # Validate username
+    if not username:
+        flash("Username is required.")
+        return redirect("/register")
+
+    # Validate password
+    if not password:
+        flash("Password is required.")
+        return redirect("/register")
+
+    if len(password) < 6:
+        flash("Password must be at least 6 characters.")
+        return redirect("/register")
+
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+
+    try:
+        # Check if username already exists
+        cursor.execute(
+            "SELECT user_id FROM users WHERE username = %s",
+            (username,)
+        )
+
+        existing_user = cursor.fetchone()
+
+        if existing_user:
+            flash("Username already exists.")
+            return redirect("/register")
+
+        # Create new user with ₹1,00,000 starting balance
+        cursor.execute(
+            """
+            INSERT INTO users (username, password, cash_balance)
+            VALUES (%s, %s, %s)
+            """,
+            (username, password, 100000)
+        )
+
+        db.commit()
+
+        flash("Registration successful.")
+        return redirect("/register")
+
+    except Exception as e:
+        db.rollback()
+        return f"Registration failed: {e}"
+
+    finally:
+        cursor.close()
+        db.close()
+
+# Login
+@app.route("/login", methods=["GET", "POST"])
+def login():
+
+    if request.method == "GET":
+        return render_template("login.html")
+
+    username = request.form.get("username", "").strip()
+    password = request.form.get("password", "")
+
+    if not username or not password:
+        flash("Username and password are required.")
+        return redirect("/login")
+
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+
+    try:
+        cursor.execute(
+            """
+            SELECT user_id, username, password
+            FROM users
+            WHERE username = %s
+            """,
+            (username,)
+        )
+
+        user = cursor.fetchone()
+
+        if user is None:
+            flash("Invalid username or password.")
+            return redirect("/login")
+
+        if password != user["password"]:
+            flash("Invalid username or password.")
+            return redirect("/login")
+
+        session["user_id"] = user["user_id"]
+        session["username"] = user["username"]
+
+        return redirect("/")
+
+    except Exception as e:
+        return f"Login failed: {e}"
+
+    finally:
+        cursor.close()
+        db.close()
+
+# Logout
+@app.route("/logout")
+def logout():
+    session.clear()
+    flash("You have been logged out.")
+    return redirect("/login")
 
 if __name__ == "__main__":
     app.run(debug=True)

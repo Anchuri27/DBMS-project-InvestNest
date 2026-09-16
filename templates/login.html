@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login - InvestNest</title>
+</head>
+<body>
+
+    <h1>InvestNest Login</h1>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <p>{{ message }}</p>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="/login">
+
+        <label>Username:</label>
+        <input type="text" name="username">
+
+        <br><br>
+
+        <label>Password:</label>
+        <input type="password" name="password">
+
+        <br><br>
+
+        <button type="submit">Login</button>
+
+    </form>
+
+    <p>
+        Don't have an account?
+        <a href="/register">Register</a>
+    </p>
+
+</body>
+</html>
