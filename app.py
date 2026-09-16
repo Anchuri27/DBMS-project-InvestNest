@@ -1,10 +1,7 @@
-<<<<<<< HEAD
 from flask import Flask, request, render_template, redirect, flash, session
 from functools import wraps
-=======
 from flask import Flask, request
 from flask import render_template
->>>>>>> origin/feature/dashboard-search-price
 import mysql.connector
 import os
 from dotenv import load_dotenv
@@ -147,8 +144,9 @@ def home():
 
 # Buy
 @app.route("/buy", methods=["POST"])
+@login_required
 def buy():
-    user_id = request.form["user_id"]
+    user_id = session["user_id"]
     stock_id = request.form["stock_id"]
 
     try:
@@ -227,8 +225,9 @@ def buy():
 
 # Sell
 @app.route("/sell", methods=["POST"])
+@login_required
 def sell():
-    user_id = request.form["user_id"]
+    user_id = session["user_id"]
     stock_id = request.form["stock_id"]
 
     try:
