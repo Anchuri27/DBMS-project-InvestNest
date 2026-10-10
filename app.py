@@ -10,7 +10,8 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "dev-secret-key")
 
-# Database connectiondef get_db_connection():
+# Database connection
+def get_db_connection():
     return mysql.connector.connect(
         host=os.getenv("DB_HOST"),
         user=os.getenv("DB_USER"),
@@ -134,276 +135,6 @@ def leaderboard():
         cursor.close()
         db.close()
 
-# Login
-@app.route("/login", methods=["GET", "POST"])
-def login():
-
-
-    if request.method == "POST":
-
-        username = request.form["username"]
-        password = request.form["password"]
-
-        db = get_db_connection()
-        cursor = db.cursor(dictionary=True)
-
-        try:
-            cursor.execute(
-                """
-                SELECT user_id, username
-                FROM users
-                WHERE username = %s AND password = %s
-                """,
-                (username, password)
-            )
-
-            user = cursor.fetchone()
-
-            if user is None:
-                return "Invalid username or password."
-
-            session["user_id"] = user["user_id"]
-            session["username"] = user["username"]
-
-            return redirect(url_for("dashboard"))
-
-        finally:
-            cursor.close()
-            db.close()
-
-    return """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>InvestNest Login</title>
-    </head>
-
-    <body>
-
-        <h1>InvestNest Login</h1>
-
-        <form method="POST">
-
-            <label>Username:</label>
-            <br>
-            <input type="text" name="username" required>
-
-            <br><br>
-
-            <label>Password:</label>
-            <br>
-            <input type="password" name="password" required>
-
-            <br><br>
-
-            <button type="submit">Login</button>
-
-        </form>
-
-    </body>
-    </html>
-    """
-    # Register
-@app.route("/register", methods=["GET", "POST"])
-def register():
-
-    if request.method == "POST":
-
-        username = request.form["username"]
-        password = request.form["password"]
-
-        db = get_db_connection()
-        cursor = db.cursor()
-
-        try:
-            cursor.execute(
-                """
-                INSERT INTO users (username, password, cash_balance)
-                VALUES (%s, %s, %s)
-                """,
-                (username, password, 100000)
-            )
-
-            db.commit()
-
-            return redirect(url_for("login"))
-
-        except mysql.connector.IntegrityError:
-            return "Username already exists. Please choose another username."
-
-        except Exception as e:
-            db.rollback()
-            return f"Registration failed: {e}", 500
-
-        finally:
-            cursor.close()
-            db.close()
-
-    return """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>InvestNest Register</title>
-    </head>
-
-    <body>
-
-        <h1>InvestNest Register</h1>
-
-        <form method="POST">
-
-            <label>Username:</label>
-            <br>
-            <input type="text" name="username" required>
-
-            <br><br>
-
-            <label>Password:</label>
-            <br>
-            <input type="password" name="password" required>
-
-            <br><br>
-
-            <button type="submit">Register</button>
-
-        </form>
-
-        <br>
-
-        <a href="{{ url_for('login') }}">
-            Already have an account? Login
-        </a>
-
-    </body>
-    </html>
-    """
-    # Dashboard
-@app.route("/dashboard")
-def dashboard():
-
-    if "user_id" not in session:
-        return redirect(url_for("login"))
-
-    user_id = session["user_id"]
-
-    db = get_db_connection()
-    cursor = db.cursor(dictionary=True)
-
-    try:
-
-        # Get current user's information
-        cursor.execute(
-            """
-            SELECT username, cash_balance
-            FROM users
-            WHERE user_id = %s
-            """,
-            (user_id,)
-        )
-
-        user = cursor.fetchone()
-
-        if user is None:
-            session.clear()
-            return redirect(url_for("login"))
-
-        # Calculate current holdings
-        cursor.execute(
-            """
-            SELECT
-                s.ticker,
-                SUM(
-                    CASE
-                        WHEN t.txn_type = 'BUY' THEN t.quantity
-                        ELSE -t.quantity
-                    END
-                ) AS quantity
-            FROM transactions t
-            JOIN stocks s
-                ON t.stock_id = s.stock_id
-            WHERE t.user_id = %s
-            GROUP BY s.stock_id, s.ticker
-            HAVING SUM(
-                CASE
-                    WHEN t.txn_type = 'BUY' THEN t.quantity
-                    ELSE -t.quantity
-                END
-            ) > 0
-            """,
-            (user_id,)
-        )
-
-        holdings = cursor.fetchall()
-
-        return render_template(
-            "dashboard.html",
-            username=user["username"],
-            cash_balance=user["cash_balance"],
-            holdings=holdings
-        )
-
-    finally:
-        cursor.close()
-        db.close()
-        # Reset Portfolio
-@app.route("/reset-portfolio", methods=["POST"])
-def reset_portfolio():
-
-    if "user_id" not in session:
-        return redirect(url_for("login"))
-
-    user_id = session["user_id"]
-
-    db = get_db_connection()
-    cursor = db.cursor()
-
-    try:
-
-        # Start database transaction
-        db.start_transaction()
-
-        # Delete ONLY this user's transactions
-        cursor.execute(
-            """
-            DELETE FROM transactions
-            WHERE user_id = %s
-            """,
-            (user_id,)
-        )
-
-        # Restore starting cash
-        cursor.execute(
-            """
-            UPDATE users
-            SET cash_balance = %s
-            WHERE user_id = %s
-            """,
-            (100000, user_id)
-        )
-
-        # Save the changes
-        db.commit()
-
-        return redirect(url_for("dashboard"))
-
-    except Exception as e:
-
-        # Undo changes if anything fails
-        db.rollback()
-
-        return f"Unable to reset portfolio: {e}", 500
-
-    finally:
-
-        cursor.close()
-        db.close()
-        # Logout
-@app.route("/logout")
-def logout():
-
-    session.clear()
-
-    return redirect(url_for("login"))
 # Home
 @app.route("/")
 def home():
@@ -480,7 +211,8 @@ def buy():
 
         db.commit()
 
-        return "Stock bought successfully."
+        flash("Stock purchased successfully.", "success")
+        return redirect(url_for("dashboard"))
 
     except Exception as e:
         db.rollback()
@@ -570,7 +302,9 @@ def sell():
 
         db.commit()
 
-        return "Stock sold successfully."
+        flash("Stock sold successfully.", "success")
+        return redirect(url_for("dashboard"))
+
 
     except Exception as e:
         db.rollback()
@@ -631,8 +365,8 @@ def register():
 
         db.commit()
 
-        flash("Registration successful.")
-        return redirect("/register")
+        flash("Registration successful. Please login.")
+        return redirect("/login")
 
     except Exception as e:
         db.rollback()
@@ -682,7 +416,7 @@ def login():
         session["user_id"] = user["user_id"]
         session["username"] = user["username"]
 
-        return redirect("/")
+        return redirect(url_for("dashboard"))
 
     except Exception as e:
         return f"Login failed: {e}"
@@ -698,14 +432,50 @@ def logout():
     flash("You have been logged out.")
     return redirect("/login")
 
+# Reset Portfolio
+@app.route("/reset-portfolio", methods=["POST"])
+@login_required
+def reset_portfolio():
+    user_id = session["user_id"]
 
+    db = get_db_connection()
+    cursor = db.cursor()
 
+    try:
+        # Delete the user's transaction history
+        cursor.execute(
+            "DELETE FROM transactions WHERE user_id = %s",
+            (user_id,)
+        )
 
-# Dashboard
+        # Restore starting cash balance
+        cursor.execute(
+            """
+            UPDATE users
+            SET cash_balance = %s
+            WHERE user_id = %s
+            """,
+            (100000, user_id)
+        )
+
+        db.commit()
+
+        flash("Portfolio reset successfully.")
+        return redirect(url_for("dashboard"))
+
+    except Exception as e:
+        db.rollback()
+        return f"Reset failed: {e}"
+
+    finally:
+        cursor.close()
+        db.close()
+
 # Dashboard
 @app.route("/dashboard")
+@login_required
 def dashboard():
-    user_id = request.args.get("user_id", 1)
+    user_id = session["user_id"]
     search = request.args.get("search", "").strip()
     price_filter = request.args.get("price_filter", "").strip()
 
@@ -768,10 +538,36 @@ def dashboard():
 
         stocks = cursor.fetchall()
 
+        # Get user's current holdings
+        cursor.execute(
+            """
+            SELECT
+                 s.ticker,
+                 SUM(
+                    CASE
+                        WHEN t.txn_type = 'BUY' THEN t.quantity
+                         WHEN t.txn_type = 'SELL' THEN -t.quantity
+                    END
+                ) AS quantity
+            FROM transactions t
+            JOIN stocks s
+                ON t.stock_id = s.stock_id
+             WHERE t.user_id = %s
+             GROUP BY t.stock_id, s.ticker
+            HAVING quantity > 0
+            ORDER BY s.ticker
+            """,
+            (user_id,)
+        )
+
+        holdings = cursor.fetchall()
+
         return render_template(
             "dashboard.html",
             user=user,
-            stocks=stocks
+            stocks=stocks,
+            holdings=holdings,
+            cash_balance=user["cash_balance"]
         )
 
     finally:
