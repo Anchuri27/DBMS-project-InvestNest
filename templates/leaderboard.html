@@ -1,111 +1,61 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <title>Leaderboard - InvestNest</title>
 
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            font-weight: bold;
+        }
+    </style>
 </head>
 
-<body class="dashboard-body">
+<body>
 
-<div class="sidebar">
+    <h1>Leaderboard</h1>
 
-    <div class="brand">
-        <i class="fa-solid fa-seedling brand-icon"></i>
-        <span>InvestNest</span>
-    </div>
-
-    <nav>
-
-        <a href="{{ url_for('dashboard') }}">
-            <i class="fa-solid fa-house"></i>
-            <span>Dashboard</span>
-        </a>
-
-        <a href="{{ url_for('history') }}">
-            <i class="fa-solid fa-chart-column"></i>
-            <span>Transaction History</span>
-        </a>
-
-        <a href="{{ url_for('leaderboard') }}" class="active">
-            <i class="fa-solid fa-trophy"></i>
-            <span>Leaderboard</span>
-        </a>
-
-        <a href="{{ url_for('logout') }}" class="logout-link">
-            <i class="fa-solid fa-right-from-bracket"></i>
-            <span>Logout</span>
-        </a>
-
-    </nav>
-
-</div>
-
-<div class="main-content">
-
-    <div class="topbar">
-        <div>
-            <h1>Leaderboard</h1>
-
-            <p>
-                See how your portfolio compares with other investors.
-            </p>
-        </div>
-
-        <div class="user-badge">
-            <i class="fa-solid fa-user"></i>
-            {{ session.get('username', 'Investor') }}
-        </div>
-    </div>
-
-    <div class="section">
-
-        {% if leaderboard %}
-
+    {% if leaderboard %}
         <table>
+            <tr>
+                <th>Rank</th>
+                <th>Username</th>
+                <th>Cash Balance</th>
+                <th>Stock Value</th>
+                <th>Total Portfolio Value</th>
+            </tr>
 
-            <thead>
-                <tr>
-                    <th>Rank</th>
-                    <th>Username</th>
-                    <th>Portfolio Value</th>
-                </tr>
-            </thead>
-
-            <tbody>
-
-                {% for player in leaderboard %}
-
-                <tr class="{% if player.user_id == session.get('user_id') %}current-user{% endif %}">
-                    <td>{{ loop.index }}</td>
-
-                    <td>{{ player.username }}</td>
-
-                    <td>
-                        ₹{{ "%.2f"|format(player.total_value|float) }}
-                    </td>
-                </tr>
-
-                {% endfor %}
-
-            </tbody>
-
+            {% for user in leaderboard %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ user.username }}</td>
+                <td>{{ user.cash_balance }}</td>
+                <td>{{ user.stock_value }}</td>
+                <td>{{ user.total_value }}</td>
+            </tr>
+            {% endfor %}
         </table>
 
-        {% else %}
+    {% else %}
+        <p>No users found.</p>
+    {% endif %}
 
-        <p>No leaderboard data available.</p>
+    <br>
 
-        {% endif %}
+    <a href="/history">Transaction History</a>
+    <br><br>
 
-    </div>
-
-</div>
+    <a href="/logout">Logout</a>
 
 </body>
 </html>

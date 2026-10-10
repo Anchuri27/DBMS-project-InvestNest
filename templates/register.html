@@ -1,105 +1,35 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<link rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-
-    <title>Register | InvestNest</title>
-
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='style.css') }}">
+    <title>Register - InvestNest</title>
 </head>
-
 <body>
 
-<div class="auth-page">
+    <h1>InvestNest Registration</h1>
 
-    <div class="auth-box">
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <p>{{ message }}</p>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
 
-        <!-- Left Section -->
-        <div class="auth-left">
-            <div class="brand">
-                <i class="fa-solid fa-seedling brand-icon"></i>
-                <span>InvestNest</span>
-            </div>
+    <form method="POST" action="/register">
 
-            <p>
-                Create your account and start learning stock trading
-                using virtual money in a safe environment.
-            </p>
+        <label>Username:</label>
+        <input type="text" name="username">
 
-            <h3 class="register-tagline">
-                Practice<br>
-                Investing.<br>
-                Build a Better<br>
-                Tomorrow.
-            </h3>
-        </div>
+        <br><br>
 
-        <!-- Right Section -->
-        <div class="auth-right">
+        <label>Password:</label>
+        <input type="password" name="password">
 
-            <h2>Create Account</h2>
+        <br><br>
 
-            <p class="auth-subtitle">
-                Join InvestNest today.
-            </p>
+        <button type="submit">Register</button>
 
-            {% with messages = get_flashed_messages() %}
-                {% if messages %}
-                    {% for message in messages %}
-                        <div class="flash-message">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-
-            <form action="/register" method="POST">
-
-                <div class="form-group">
-                    <label for="username">Username</label>
-
-                    <input
-                        type="text"
-                        id="username"
-                        name="username"
-                        placeholder="Choose a username"
-                        required
-                    >
-                </div>
-
-                <div class="form-group">
-                    <label for="password">Password</label>
-
-                    <input
-                        type="password"
-                        id="password"
-                        name="password"
-                        placeholder="Create a password"
-                        required
-                    >
-                </div>
-
-                <button type="submit" class="btn btn-primary">
-                    Register
-                </button>
-
-            </form>
-
-            <p class="auth-link">
-                Already have an account?
-                <a href="/login">Login here</a>
-            </p>
-
-        </div>
-
-    </div>
-
-</div>
+    </form>
 
 </body>
 </html>

@@ -1,181 +1,60 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transaction History - InvestNest</title>
+    
+    <style>
+    table {
+        border-collapse: collapse;
+        width: 100%;
+    }
 
-<link rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    th, td {
+        border: 1px solid black;
+        padding: 8px;
+        text-align: left;
+    }
 
-    <title>Transaction History | InvestNest</title>
-
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='style.css') }}">
+    th {
+        font-weight: bold;
+    }
+    </style>
 </head>
+<body>
 
-<body class ="dashboard-body">
+    <h1>Transaction History</h1>
 
-<!-- Sidebar -->
-<aside class="sidebar">
+    {% if transactions %}
+        <table border="1">
+            <tr>
+                <th>Transaction ID</th>
+                <th>Ticket</th>
+                <th>Company Name</th>
+                <th>Type</th>
+                <th>Quantity</th>
+                <th>Price Per Share</th>
+                <th>Date</th>
+            </tr>
 
-    <div class="brand">
-        <i class="fa-solid fa-seedling brand-icon"></i>
-        <span>InvestNest</span>
-    </div>
+            {% for transaction in transactions %}
+            <tr>
+                <td>{{ transaction.txn_id }}</td>
+                <td>{{ transaction.ticker }}</td>
+                <td>{{ transaction.company_name }}</td>
+                <td>{{ transaction.txn_type }}</td>
+                <td>{{ transaction.quantity }}</td>
+                <td>{{ transaction.price_per_share }}</td>
+                <td>{{ transaction.txn_date }}</td>
+            </tr>
+            {% endfor %}
+        </table>
 
-    <nav>
+    {% else %}
+        <p>No transactions found.</p>
+    {% endif %}
 
-        <a href="{{ url_for('dashboard') }}">
-            <i class="fa-solid fa-house"></i>
-            <span>Dashboard</span>
-        </a>
-
-        <a href="{{ url_for('history') }}" class="active">
-            <i class="fa-solid fa-chart-column"></i>
-            <span>Transaction History</span>
-        </a>
-
-        <a href="{{ url_for('leaderboard') }}">
-            <i class="fa-solid fa-trophy"></i>
-            <span>Leaderboard</span>
-        </a>
-
-        <a href="{{ url_for('logout') }}" class="logout-link">
-            <i class="fa-solid fa-right-from-bracket"></i>
-            <span>Logout</span>
-        </a>
-
-    </nav>
-
-
-</aside>
-
-
-<!-- Main Content -->
-<main class="main-content">
-
-    <div class="topbar">
-
-        <div>
-            <div class="history-heading">
-            <i class="fa-solid fa-clock-rotate-left"></i>
-            <h1>Transaction History</h1>
-            </div>
-
-             <p>
-                Review your previous stock transactions.
-            </p>
-        </div>
-
-        <!-- Username -->
-        <div class="user-badge">
-            <i class="fa-solid fa-user"></i>
-            {{ session.get('username', 'Investor') }}
-        </div>
-
-    </div>
-
-
-    <section class="section">
-
-        {% if transactions %}
-
-        <div class="table-container">
-
-            <table>
-
-                <thead>
-
-                    <tr>
-                        <th>Transaction ID</th>
-                        <th>Ticker</th>
-                        <th>Company Name</th>
-                        <th>Type</th>
-                        <th>Quantity</th>
-                        <th>Price Per Share</th>
-                        <th>Date</th>
-                    </tr>
-
-                </thead>
-
-                <tbody>
-
-                    {% for transaction in transactions %}
-
-                    <tr>
-
-                        <td>
-                            {{ transaction.txn_id }}
-                        </td>
-
-                        <td>
-                            <strong>
-                                {{ transaction.ticker }}
-                            </strong>
-                        </td>
-
-                        <td>
-                            {{ transaction.company_name }}
-                        </td>
-
-                        <td>
-
-                            {% if transaction.txn_type|upper == "BUY" %}
-
-                                <span class="badge badge-buy">
-                                    BUY
-                                </span>
-
-                            {% else %}
-
-                                <span class="badge badge-sell">
-                                    SELL
-                                </span>
-
-                            {% endif %}
-
-                        </td>
-
-                        <td>
-                            {{ transaction.quantity }}
-                        </td>
-
-                        <td>
-                            &#8377;{{ transaction.price_per_share }}
-                        </td>
-
-                        <td>
-                            {{ transaction.txn_date }}
-                        </td>
-
-                    </tr>
-
-                    {% endfor %}
-
-                </tbody>
-
-            </table>
-
-        </div>
-
-        {% else %}
-
-        <div class="empty-state">
-
-            <h3>No Transactions Found</h3>
-
-            <p>
-                Your buy and sell transactions will appear here.
-            </p>
-
-        </div>
-
-        {% endif %}
-
-    </section>
-
-</main>
+    <br>
+    <a href="/logout">Logout</a>
 
 </body>
 </html>

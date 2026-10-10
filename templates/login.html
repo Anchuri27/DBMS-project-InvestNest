@@ -1,176 +1,40 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <title>Login - InvestNest</title>
-
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='style.css') }}">
 </head>
+<body>
 
-<body class="login-body">
+    <h1>InvestNest Login</h1>
 
-    <div class="login-page">
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <p>{{ message }}</p>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
 
-        <!-- LEFT SIDE: BACKGROUND IMAGE -->
+    <form method="POST" action="/login">
 
-        <div class="left-section">
-             <div class="overlay-content">
-                 <div class="brand">
-                    <i class="fa-solid fa-seedling brand-icon"></i>
-                    <span>InvestNest</span>
-                 </div>
-                 
-                 <p class="tagline">Learn • Trade • Grow</p>
-                 
-                 <h1>
-                    Practice<br>
-                    Investing.<br>
-                    Build a Better<br>
-                    Tomorrow.
-                 </h1>
-                 
-                 <p class="left-description">
-                    A virtual trading platform<br>
-                    for curious minds.
-                </p>
-                
-                <p class="left-quote">
-                    "Small steps in investing<br>
-                     today, bigger opportunities<br>
-                     tomorrow."
-                    </p>
-                
-            </div>
-        </div>
-    
+        <label>Username:</label>
+        <input type="text" name="username">
 
-        <!-- RIGHT SIDE: LOGIN FORM -->
+        <br><br>
 
-        <div class="right-section">
+        <label>Password:</label>
+        <input type="password" name="password">
 
-            <div class="login-box">
+        <br><br>
 
-                <h2>Welcome Back</h2>
+        <button type="submit">Login</button>
 
-                <p class="login-subtitle">
-                    Login to continue to InvestNest
-                </p>
+    </form>
 
-
-                <!-- FLASH MESSAGES -->
-
-                {% with messages = get_flashed_messages() %}
-                    {% if messages %}
-                        {% for message in messages %}
-                            {% if "successfully" not in message %}
-                                <p class="flash-message">
-                                    {{ message }}
-                                </p>
-                            {% endif %}    
-                        {% endfor %}
-                    {% endif %}
-                {% endwith %}
-
-
-                <!-- LOGIN FORM -->
-
-                <form method="POST" action="/login">
-
-                    <div class="form-group">
-
-                        <label for="username">
-                            Username
-                        </label>
-
-                        <input
-                            type="text"
-                            id="username"
-                            name="username"
-                            placeholder="Enter your username"
-                            required
-                        >
-
-                    </div>
-
-
-                    <div class="form-group">
-
-                        <label for="password">
-                            Password
-                        </label>
-
-                        <input
-                            type="password"
-                            id="password"
-                            name="password"
-                            placeholder="Enter your password"
-                            required
-                        >
-
-                    </div>
-
-
-                    <button type="submit" class="btn btn-primary">
-                        Login
-                    </button>
-
-                </form>
-
-
-                <!-- REGISTER LINK -->
-
-                <p class="auth-link">
-
-                    Don't have an account?
-
-                    <a href="/register">
-                        Register
-                    </a>
-
-                </p>
-                <!-- LOGIN FEATURES: PUT HERE -->
-
-        <div class="login-features">
-
-            <div class="feature-item">
-                <div class="login-features">
-
-    <div class="feature-item">
-        <div class="feature-icon">
-            <i class="fa-solid fa-graduation-cap"></i>
-        </div>
-        <h4>Learn</h4>
-        <p>The Market</p>
-    </div>
-
-    <div class="feature-item">
-        <div class="feature-icon">
-            <i class="fa-solid fa-chart-column"></i>
-        </div>
-        <h4>Practice</h4>
-        <p>Without Risk</p>
-    </div>
-
-    <div class="feature-item">
-        <div class="feature-icon">
-            <i class="fa-solid fa-seedling"></i>
-        </div>
-        <h4>Grow</h4>
-        <p>Your Skills</p>
-    </div>
-
-</div>
-            </div>
-
-        </div>
-        
-    </div>
-    
+    <p>
+        Don't have an account?
+        <a href="/register">Register</a>
+    </p>
 
 </body>
 </html>

@@ -4,413 +4,237 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <title>Dashboard | InvestNest</title>
+    <title>InvestNest Dashboard</title>
 
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f8;
+            margin: 0;
+            padding: 30px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: auto;
+        }
+
+        h1 {
+            color: #1f2937;
+        }
+
+        .card {
+            background-color: white;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .cash {
+            font-size: 28px;
+            font-weight: bold;
+            color: #15803d;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f1f5f9;
+        }
+
+        button {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        .reset-button {
+            background-color: #dc2626;
+            color: white;
+        }
+
+        .reset-button:hover {
+            background-color: #b91c1c;
+        }
+
+        .logout-button {
+            background-color: #374151;
+            color: white;
+        }
+
+        .logout-button:hover {
+            background-color: #1f2937;
+        }
+    </style>
 </head>
 
-<body class="dashboard-body">
+<body>
 
-<!-- Sidebar -->
-<aside class="sidebar">
+    <h1>InvestNest Dashboard</h1>
 
-    <div class="brand">
-        <i class="fa-solid fa-seedling brand-icon"></i>
-        <span>InvestNest</span>
-    </div>
+    <h2>Welcome, {{ user.username }}!</h2>
 
-    <nav>
+    <h3>Cash Balance: ₹{{ user.cash_balance }}</h3>
 
-        <a href="{{ url_for('dashboard') }}" class="active">
-            <i class="fa-solid fa-house"></i>
-            <span>Dashboard</span>
-        </a>
+    <hr>
 
-        <a href="{{ url_for('history') }}">
-            <i class="fa-solid fa-clock-rotate-left"></i>
-            <span>Transaction History</span>
-        </a>
+    <h2>Available Stocks</h2>
+    <form method="GET" action="/dashboard">
+    <input type="hidden" name="user_id" value="{{ user.user_id }}">
 
-        <a href="{{ url_for('leaderboard') }}">
-            <i class="fa-solid fa-trophy"></i>
-            <span>Leaderboard</span>
-        </a>
+    <input type="text"
+           name="search"
+           placeholder="Search by ticker or company name"
+           value="{{ request.args.get('search', '') }}">
 
+    <button type="submit">Search</button>
+</form>
 
-        <a href="{{ url_for('logout') }}" class="logout-link">
-            <i class="fa-solid fa-right-from-bracket"></i>
-            <span>Logout</span>
-        </a>
+<form method="GET" action="/dashboard">
+    <input type="hidden" name="user_id" value="{{ user.user_id }}">
 
-    </nav>
+    <input type="hidden"
+           name="search"
+           value="{{ request.args.get('search', '') }}">
 
-</aside>
+    <select name="price_filter">
+        <option value="">All Stocks</option>
+        <option value="below_1000"
+            {% if request.args.get('price_filter') == 'below_1000' %}selected{% endif %}>
+            Below ₹1000
+        </option>
+        <option value="1000_3000"
+            {% if request.args.get('price_filter') == '1000_3000' %}selected{% endif %}>
+            ₹1000 - ₹3000
+        </option>
+        <option value="above_3000"
+            {% if request.args.get('price_filter') == 'above_3000' %}selected{% endif %}>
+            Above ₹3000
+        </option>
+    </select>
 
+    <button type="submit">Filter</button>
+</form>
 
-<!-- Main Content -->
-<main class="main-content">
+<br>
 
-    <!-- Topbar -->
-    <div class="topbar">
+    {% if stocks %}
 
-        <div>
-           <h1>Good evening, {{ user.username }}! <i class="fa-solid fa-star welcome-icon"></i> </h1>
-           <p>
-            Track your investments and make smarter decisions.
-        </p>
-        </div>
+        {% for stock in stocks %}
 
-        <div class="user-badge">
-            👤 {{ user.username }}
-        </div>
+            <div>
+                <strong>{{ stock.ticker }}</strong>
+                - {{ stock.company_name }}
+                - ₹{{ stock.current_price }}
 
-    </div>
+                <br><br>
 
+                <form action="/buy" method="POST">
+                    <input type="hidden" name="user_id" value="{{ user.user_id }}">
+                    <input type="hidden" name="stock_id" value="{{ stock.stock_id }}">
 
-    <!-- Flash Messages -->
-    {% with messages = get_flashed_messages() %}
+                    <input type="number" name="quantity"
+                           placeholder="Quantity"
+                           min="1"
+                           required>
 
-        {% if messages %}
+                    <button type="submit">Buy</button>
+                </form>
 
-            {% for message in messages %}
+                <br>
 
-                <div class="flash-message">
-                    {{ message }}
-                </div>
+                <form action="/sell" method="POST">
+                    <input type="hidden" name="user_id" value="{{ user.user_id }}">
+                    <input type="hidden" name="stock_id" value="{{ stock.stock_id }}">
 
-            {% endfor %}
+                    <input type="number" name="quantity"
+                           placeholder="Quantity"
+                           min="1"
+                           required>
 
-        {% endif %}
+                    <button type="submit">Sell</button>
+                </form>
 
-    {% endwith %}
+                
 
-
-    <!-- Cash Balance Card -->
-    <div class="card-container">
-
-        <div class="dashboard-card">
-
-            <h3>Available Cash</h3>
-
-            <div class="amount">
-                &#8377;{{ "%.2f"|format(cash_balance) }}
             </div>
 
-            <p class="description">
-                Your remaining virtual balance
-            </p>
+            <hr>
 
-        </div>
+        {% endfor %}
 
-        <div class="dashboard-card">
+    {% else %}
 
-            <h3>Portfolio Value</h3>
+        <p>No stocks found.</p>
 
-            <div class="amount">
-                &#8377;1,00,000.00
-            </div>
+    {% endif %}
 
-            <p class="description">
-                Initial virtual investment amount
-            </p>
+<div class="container">
 
-        </div>
+    <h1>InvestNest Dashboard</h1>
 
-        <div class="dashboard-card">
+    <div class="card">
 
-            <h3>Account</h3>
+        <h2>Welcome, {{ username }}</h2>
 
-            <div class="amount">
-                Active
-            </div>
+        <p>Cash Balance</p>
 
-            <p class="description">
-                Your InvestNest account
-            </p>
-
+        <div class="cash">
+            ₹{{ "%.2f"|format(cash_balance) }}
         </div>
 
     </div>
 
 
-    <!-- Available Stocks -->
-    <section class="section">
+    <div class="card">
 
-        <div class="section-header">
-
-            <h2>Available Stocks</h2>
-
-        </div>
-
-
-        <!-- Search -->
-        <form method="GET" action="/dashboard">
-
-            <input
-                type="text"
-                name="search"
-                class="stock-search"
-                placeholder="Search ticker or company name"
-                value="{{ request.args.get('search', '') }}"
-                style="padding: 11px; width: 60%; border: 1px solid #d8e3dd; border-radius: 8px;"
-            >
-
-            <button type="submit" class="btn btn-primary">
-                Search
-            </button>
-
-        </form>
-
-        <br>
-
-
-        <!-- Price Filter -->
-        <form method="GET" action="/dashboard">
-
-            <input
-                type="hidden"
-                name="search"
-                value="{{ request.args.get('search', '') }}"
-            >
-
-            <select name="price_filter" class="stock-filter">
-                    
-
-                <option value="">All Stocks</option>
-
-                <option value="below_1000"
-                    {% if request.args.get('price_filter') == 'below_1000' %}
-                        selected
-                    {% endif %}>
-                    Below ₹1000
-                </option>
-
-                <option value="1000_3000"
-                    {% if request.args.get('price_filter') == '1000_3000' %}
-                        selected
-                    {% endif %}>
-                    ₹1000 - ₹3000
-                </option>
-
-                <option value="above_3000"
-                    {% if request.args.get('price_filter') == 'above_3000' %}
-                        selected
-                    {% endif %}>
-                    Above ₹3000
-                </option>
-
-            </select>
-
-            <button type="submit" class="btn btn-secondary">
-                Filter
-            </button>
-
-        </form>
-
-        <br>
-
-
-        <!-- Stock List -->
-        {% if stocks %}
-
-            <div class="stock-grid">
-
-                {% for stock in stocks %}
-
-                    <div class="stock-card">
-
-                        <div class="stock-company">
-                          
-                            <img 
-                                src="{{ url_for('static', filename='images/stocks/' + stock.ticker + '.png') }}"
-                                class="company-logo"
-                                alt="{{ stock.company_name }} logo"
-                            >
-                                
-                         
-
-                            <div>
-                                <h3>{{ stock.ticker }}</h3>
-                                <p>{{ stock.company_name }}</p>
-                             </div>
-                        </div>
-
-                        
-
-                        <div class="stock-price">
-                            &#8377;{{ stock.current_price }}
-                        </div>
-
-                        
-                        <!-- Buy Form -->
-                        <form action="/buy"
-                              method="POST"
-                              class="trade-form">
-
-                            <input
-                                type="hidden"
-                                name="user_id"
-                                value="{{ user.user_id }}"
-                            >
-
-                            <input
-                                type="hidden"
-                                name="stock_id"
-                                value="{{ stock.stock_id }}"
-                            >
-
-                            <input
-                                type="number"
-                                name="quantity"
-                                placeholder="Quantity"
-                                min="1"
-                                required
-                            >
-
-                            <button type="submit"
-                                    class="btn btn-success">
-                                Buy
-                            </button>
-
-                        </form>
-
-
-                        <!-- Sell Form -->
-                        <form action="/sell"
-                              method="POST"
-                              class="trade-form">
-
-                            <input
-                                type="hidden"
-                                name="user_id"
-                                value="{{ user.user_id }}"
-                            >
-
-                            <input
-                                type="hidden"
-                                name="stock_id"
-                                value="{{ stock.stock_id }}"
-                            >
-
-                            <input
-                                type="number"
-                                name="quantity"
-                                placeholder="Quantity"
-                                min="1"
-                                required
-                            >
-
-                            <button type="submit"
-                                    class="btn btn-danger">
-                                Sell
-                            </button>
-
-                        </form>
-
-                    </div>
-
-                {% endfor %}
-
-            </div>
-
-        {% else %}
-
-            <div class="empty-state">
-                <h3>No Stocks Found</h3>
-                <p>Try changing your search or filter.</p>
-            </div>
-
-        {% endif %}
-
-    </section>
-
-
-    <!-- My Holdings -->
-    <section class="section">
-
-        <div class="section-header">
-
-            <h2>My Holdings</h2>
-
-        </div>
-
+        <h2>My Holdings</h2>
 
         {% if holdings %}
 
-            <div class="table-container">
+        <table>
 
-                <table>
+            <tr>
+                <th>Stock</th>
+                <th>Quantity</th>
+            </tr>
 
-                    <thead>
+            {% for holding in holdings %}
 
-                        <tr>
-                            <th>Stock</th>
-                            <th>Quantity</th>
-                        </tr>
+            <tr>
+                <td>{{ holding.ticker }}</td>
+                <td>{{ holding.quantity }}</td>
+            </tr>
 
-                    </thead>
+            {% endfor %}
 
-                    <tbody>
-
-                        {% for holding in holdings %}
-
-                            <tr>
-
-                                <td>
-                                    <strong>
-                                        {{ holding.ticker }}
-                                    </strong>
-                                </td>
-
-                                <td>
-                                    {{ holding.quantity }}
-                                </td>
-
-                            </tr>
-
-                        {% endfor %}
-
-                    </tbody>
-
-                </table>
-
-            </div>
+        </table>
 
         {% else %}
 
-            <div class="empty-state">
-
-                <h3>No Holdings Yet</h3>
-
-                <p>
-                    Purchase stocks to see them in your portfolio.
-                </p>
-
-            </div>
+        <p>No stocks currently held.</p>
 
         {% endif %}
 
-    </section>
+    </div>
 
 
-    <!-- Portfolio Actions -->
-    <section class="section">
+    <div class="card">
 
-        <div class="section-header">
-
-            <h2>Portfolio Actions</h2>
-
-        </div>
-
-        <p class="portfolio-description">
-            Reset your portfolio to remove your transactions and
-            restore your initial virtual balance.
-        </p>
+        <h2>Portfolio Actions</h2>
 
         <form
             method="POST"
@@ -418,18 +242,24 @@
             onsubmit="return confirm('Are you sure you want to reset your portfolio? All your transactions will be deleted and your cash will return to ₹1,00,000.');"
         >
 
-            <button type="submit"
-                    class="btn btn-danger">
-
+            <button type="submit" class="reset-button">
                 Reset Portfolio
-
             </button>
 
         </form>
 
-    </section>
+        <br>
 
-</main>
+        <a href="{{ url_for('logout') }}">
+            <button type="button" class="logout-button">
+                Logout
+            </button>
+        </a>
+
+    </div>
+
+</div>
+
 
 </body>
 </html>
